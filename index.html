@@ -1182,12 +1182,11 @@
         const card = document.createElement('div');
         card.className = 'reel-card' + (isActive ? ' is-active' : '');
         card.dataset.idx = idx;
-        // Only load src for active + immediate neighbours (dist <= 1) to avoid
-        // firing simultaneous requests to the video host for off-screen cards.
+        // All visible cards get src so the first frame shows as thumbnail.
+        // Outer cards (dist=2) use preload="metadata" (first frame only, no full download).
+        // Only adjacent cards (dist=1) are actively played.
         const videoTag = r.videoUrl
-          ? dist <= 1
-            ? `<video class="reel-thumb-video" src="${r.videoUrl}" muted loop playsinline preload="metadata"></video>`
-            : `<video class="reel-thumb-video" data-src="${r.videoUrl}" muted loop playsinline preload="none"></video>`
+          ? `<video class="reel-thumb-video" src="${r.videoUrl}" muted loop playsinline preload="metadata"></video>`
           : '';
         card.innerHTML = `
           <div class="reel-thumb" style="background: ${r.thumb};">
@@ -1217,9 +1216,6 @@
       track.querySelectorAll('.reel-thumb-video').forEach(v => {
         const i = parseInt(v.closest('.reel-card').dataset.idx, 10);
         if (adjacent.has(i)) {
-          // Lazy-assign src only when the card becomes adjacent so the request
-          // fires right before it might be needed, not on initial paint.
-          if (!v.src && v.dataset.src) { v.src = v.dataset.src; }
           v.play().catch(() => {});
         } else {
           try { v.pause(); v.currentTime = 0; } catch(_) {}
